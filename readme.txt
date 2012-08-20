@@ -1,7 +1,14 @@
 +=========================================================+
 |     RegExp COUPONS v. 1.0                               | 
 |     http://juanmatiasdelacamara.wordpress.com/          |
+|     juanmatias@gmail.com                                |
 +=========================================================+
+
+This is a modification to the OpenCart core files to allow coupons codes that fit in a regular expression rather in a fixed code.
+Tested on OpenCart Version 1.5.3.1
+
+-------------------------------------------------------------------------------
+
 
 I did this modification because I needed it. So use it at your own risk and may the Force be with you. ;)
 
@@ -21,7 +28,7 @@ Table "coupon_history"
 	ALTER TABLE `oc_coupon_history` ADD `code` VARCHAR( 10 ) CHARACTER SET utf8 COLLATE utf8_bin NULL 
 
 
-BE CAREFUL: this modifies core files. If you have made modifications to them, see the change log and apply it by hand.
+BE CAREFUL: this modifies core files. If you have made modifications to them, see the change log and apply it by hand. (The diff is made with GIT on the basis of standar installation of OpenCart.
 
 
 WHAT'S THIS ABOUT?
