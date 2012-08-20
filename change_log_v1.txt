@@ -1,0 +1,906 @@
+diff --git a/admin/controller/sale/coupon.php b/admin/controller/sale/coupon.php
+index 3b50ca0..e5850ef 100644
+--- a/admin/controller/sale/coupon.php
++++ b/admin/controller/sale/coupon.php
+@@ -274,6 +274,17 @@ class ControllerSaleCoupon extends Controller {
+   	}
+ 
+   	private function getForm() {
++  		/* RegExp Coupon
++		 * 
++		 * Added code to show and edit the new values inserted for RegExp Coupons.
++		 * 
++		 * Fields:
++		 * 	code_regexp		Is this a Regular Expression? 
++		 *  codesecurity	The security code needed to validate the coupon code in case of RegExp.
++		 *  codesecurityname The name of the security code for this company in case of RegExp.
++		 *  codename 		The name of the coupon code for this company in case of RegExp.
++		 * 
++		 */
+     	$this->data['heading_title'] = $this->language->get('heading_title');
+ 
+     	$this->data['text_enabled'] = $this->language->get('text_enabled');
+@@ -286,6 +297,10 @@ class ControllerSaleCoupon extends Controller {
+ 		$this->data['entry_name'] = $this->language->get('entry_name');
+     	$this->data['entry_description'] = $this->language->get('entry_description');
+     	$this->data['entry_code'] = $this->language->get('entry_code');
++		$this->data['entry_code_security'] = $this->language->get('entry_code_security');
++    	$this->data['entry_code_name'] = $this->language->get('entry_code_name');
++		$this->data['entry_code_security_name'] = $this->language->get('entry_code_security_name');
++		$this->data['entry_code_regexp'] = $this->language->get('entry_code_regexp');
+ 		$this->data['entry_discount'] = $this->language->get('entry_discount');
+ 		$this->data['entry_logged'] = $this->language->get('entry_logged');
+ 		$this->data['entry_shipping'] = $this->language->get('entry_shipping');
+@@ -330,7 +345,25 @@ class ControllerSaleCoupon extends Controller {
+ 		} else {
+ 			$this->data['error_code'] = '';
+ 		}		
+-		
++
++		if (isset($this->error['code_name'])) {
++			$this->data['error_code_name'] = $this->error['code_name'];
++		} else {
++			$this->data['error_code_name'] = '';
++		}		
++
++		if (isset($this->error['code_security'])) {
++			$this->data['error_code_security'] = $this->error['code_security'];
++		} else {
++			$this->data['error_code_security'] = '';
++		}		
++
++		if (isset($this->error['code_security_name'])) {
++			$this->data['error_code_security_name'] = $this->error['code_security_name'];
++		} else {
++			$this->data['error_code_security_name'] = '';
++		}		
++
+ 		if (isset($this->error['date_start'])) {
+ 			$this->data['error_date_start'] = $this->error['date_start'];
+ 		} else {
+@@ -398,7 +431,38 @@ class ControllerSaleCoupon extends Controller {
+ 		} else {
+       		$this->data['code'] = '';
+     	}
++
++    	if (isset($this->request->post['codesecurity'])) {
++      		$this->data['codesecurity'] = $this->request->post['codesecurity'];
++    	} elseif (!empty($coupon_info)) {
++			$this->data['codesecurity'] = $coupon_info['codesecurity'];
++		} else {
++      		$this->data['codesecurity'] = '';
++    	}
++
++    	if (isset($this->request->post['codename'])) {
++      		$this->data['codename'] = $this->request->post['codename'];
++    	} elseif (!empty($coupon_info)) {
++			$this->data['codename'] = $coupon_info['codename'];
++		} else {
++      		$this->data['codename'] = '';
++    	}
+ 		
++    	if (isset($this->request->post['codesecurityname'])) {
++      		$this->data['codesecurityname'] = $this->request->post['codesecurityname'];
++    	} elseif (!empty($coupon_info)) {
++			$this->data['codesecurityname'] = $coupon_info['codesecurityname'];
++		} else {
++      		$this->data['codesecurityname'] = '';
++    	}
++    	if (isset($this->request->post['code_regexp'])) {
++      		$this->data['code_regexp'] = $this->request->post['code_regexp'];
++    	} elseif (!empty($coupon_info)) {
++			$this->data['code_regexp'] = $coupon_info['code_regexp'];
++		} else {
++      		$this->data['code_regexp'] = '';
++    	}
++				
+     	if (isset($this->request->post['type'])) {
+       		$this->data['type'] = $this->request->post['type'];
+     	} elseif (!empty($coupon_info)) {
+@@ -524,9 +588,18 @@ class ControllerSaleCoupon extends Controller {
+         	$this->error['name'] = $this->language->get('error_name');
+       	}
+ 			
+-    	if ((utf8_strlen($this->request->post['code']) < 3) || (utf8_strlen($this->request->post['code']) > 10)) {
++    	if ((utf8_strlen($this->request->post['code']) < 3) || (utf8_strlen($this->request->post['code']) > 20)) {
+       		$this->error['code'] = $this->language->get('error_code');
+     	}
++    	if ((utf8_strlen($this->request->post['codename']) > 20)) {
++      		$this->error['code_name'] = $this->language->get('error_code_name');
++    	}
++    	if ((utf8_strlen($this->request->post['codesecurity']) > 20)) {
++      		$this->error['code_security'] = $this->language->get('error_code_security');
++    	}
++    	if ((utf8_strlen($this->request->post['codesecurityname']) > 20)) {
++      		$this->error['code_security_name'] = $this->language->get('error_code_security_name');
++    	}
+ 		
+ 		$coupon_info = $this->model_sale_coupon->getCouponByCode($this->request->post['code']);
+ 		
+diff --git a/admin/language/english/sale/coupon.php b/admin/language/english/sale/coupon.php
+index de3f38a..cf23458 100644
+--- a/admin/language/english/sale/coupon.php
++++ b/admin/language/english/sale/coupon.php
+@@ -21,8 +21,12 @@ $_['column_date_added']   = 'Date Added';
+ $_['column_action']       = 'Action';
+ 
+ // Entry
+-$_['entry_name']          = 'Coupon Name:';
++$_['entry_name']          = 'Coupon Name or Company/Campaign:';
+ $_['entry_code']          = 'Code:<br /><span class="help">The code the customer enters to get the discount</span>';
++$_['entry_code_security'] = 'Security code:<br /><span class="help">The code to validate the RegExp in case it applies (only valid when RegExp)</span>';
++$_['entry_code_name']     = 'Code name:<br /><span class="help">In case of RegExp this name will be shown to the user as field\'s label (only valid when RegExp)</span>';
++$_['entry_code_security_name'] = 'Security code name:<br /><span class="help">In case of RegExp this name will be shown to the user as field\'s label (only valid when RegExp)</span>';
++$_['entry_code_regexp']   = 'It\'s a Regular Expression:';
+ $_['entry_type']          = 'Type:<br /><span class="help">Percentage or Fixed Amount</span>';
+ $_['entry_discount']      = 'Discount:';
+ $_['entry_logged']        = 'Customer Login:<br /><span class="help">Customer must be logged in to use the coupon.</span>';
+@@ -40,5 +44,8 @@ $_['entry_status']        = 'Status:';
+ $_['error_permission']    = 'Warning: You do not have permission to modify coupons!';
+ $_['error_exists']        = 'Warning: Coupon code is already in use!';
+ $_['error_name']          = 'Coupon Name must be between 3 and 128 characters!';
+-$_['error_code']          = 'Code must be between 3 and 10 characters!';
++$_['error_code']          = 'Code must be between 3 and 20 characters!';
++$_['error_code_name']     = 'Code name must be as much 20 characters!';
++$_['error_code_security'] = 'Security code must be as much 20 characters!';
++$_['error_code_security_name'] = 'Security code name must be as much 20 characters!';
+ ?>
+diff --git a/admin/language/spanish/sale/coupon.php b/admin/language/spanish/sale/coupon.php
+index 87bdfc2..198c4b1 100644
+--- a/admin/language/spanish/sale/coupon.php
++++ b/admin/language/spanish/sale/coupon.php
+@@ -21,9 +21,13 @@ $_['column_date_added']   = 'Fecha alta';
+ $_['column_action']       = 'Acción';
+ 
+ // Entry
+-$_['entry_name']          = 'Nombre cupón:';
+-$_['entry_code']          = 'Código:<br /><span class="help">El código que el cliente introduce para conseguir el descuento</span>';
+-$_['entry_type']          = 'Yipo:<br /><span class="help">Porcentaje o cantidad fija</span>';
++$_['entry_name']          = 'Nombre cupón o Compañía/Campaña:';
++$_['entry_code']          = 'Código:<br /><span class="help">El código que el cliente introduce para conseguir el descuento o la expresión regular que responde a la campaña</span>';
++$_['entry_code_security'] = 'Código de seguridad:<br /><span class="help">El código que el cliente introduce para validar la expresión regular que responde a la campaña si aplica (Sólo válido si es expresión regular)</span>';
++$_['entry_code_name']     = 'Nombre código:<br /><span class="help">En caso de ser una expresión regular este nombre aparecerá como etiqueta del campo para el cliente (Sólo válido si es expresión regular)</span>';
++$_['entry_code_security_name'] = 'Nombre código de seguridad:<br /><span class="help">En caso de ser una expresión regular este nombre aparecerá como etiqueta del campo para el cliente (Sólo válido si es expresión regular)</span>';
++$_['entry_code_regexp']   = 'Es expresión regular:';
++$_['entry_type']          = 'Tipo:<br /><span class="help">Porcentaje o cantidad fija</span>';
+ $_['entry_discount']      = 'Descuento:';
+ $_['entry_logged']        = 'Cliente conectado:<br /><span class="help">El cliente debe haber iniciado sesión para usar el cupón.</span>';
+ $_['entry_shipping']      = 'Envío gratuito:';
+@@ -32,12 +36,15 @@ $_['entry_category']      = 'Categoria:<br /><span class="help">Seleccione todos
+ $_['entry_product']       = 'Productos:<br /><span class="help">Selecciona productos específicos a los que se aplicará el cupón. No selecciones ninún producto para aplicarlo a la cesta entera.</span>';
+ $_['entry_date_start']    = 'Fecha inicio:';
+ $_['entry_date_end']      = 'Fecha fin:';
+-$_['entry_uses_total']    = 'Usuarios por cupón:<br /><span class="help">El número máximo de veces que el cupón puede ser usado por cualquier cliente. Dejar en blanco para ilimitado</span>';
+-$_['entry_uses_customer'] = 'Usos por cliente:<br /><span class="help">El número máximo de veces que el cupón puede ser usado por un cliente. Dejar en blanco para ilimitado</span>';
++$_['entry_uses_total']    = 'Usuarios por cupón:<br /><span class="help">El número máximo de veces que el cupón puede ser usado por cualquier cliente. Dejar en blanco para ilimitado (No válido si es Expresión Regular)</span>';
++$_['entry_uses_customer'] = 'Usos por cliente:<br /><span class="help">El número máximo de veces que el cupón puede ser usado por un cliente. Dejar en blanco para ilimitado (No válido si es Expresión Regular)</span>';
+ $_['entry_status']        = 'Estado:';
+ 
+ // Error
+-$_['error_permission']    = 'Cuidado: No tienes permisos para modificar los cupones!';
+-$_['error_name']          = 'El nombre de cupón debe tener entre 3 y 128 carácteres!';
+-$_['error_code']          = 'El código debe tener entre 3 y 10 carácteres!';
++$_['error_permission']    = 'Cuidado: ¡No tienes permisos para modificar los cupones!';
++$_['error_name']          = '¡El nombre de cupón debe tener entre 3 y 128 carácteres!';
++$_['error_code']          = '¡El código debe tener entre 3 y 20 carácteres!';
++$_['error_code_name']     = '¡El nombre del código debe tener a lo sumo 20 carácteres!';
++$_['error_code_security'] = '¡El código de seguridad debe tener a lo sumo 20 carácteres!';
++$_['error_code_security_name'] = '¡El nombre del código de seguridad debe tener a lo sumo 20 carácteres!';
+ ?>
+diff --git a/admin/model/sale/coupon.php b/admin/model/sale/coupon.php
+index acf6414..d2f2dc0 100644
+--- a/admin/model/sale/coupon.php
++++ b/admin/model/sale/coupon.php
+@@ -1,7 +1,10 @@
+ <?php
+ class ModelSaleCoupon extends Model {
+ 	public function addCoupon($data) {
+-      	$this->db->query("INSERT INTO " . DB_PREFIX . "coupon SET name = '" . $this->db->escape($data['name']) . "', code = '" . $this->db->escape($data['code']) . "', discount = '" . (float)$data['discount'] . "', type = '" . $this->db->escape($data['type']) . "', total = '" . (float)$data['total'] . "', logged = '" . (int)$data['logged'] . "', shipping = '" . (int)$data['shipping'] . "', date_start = '" . $this->db->escape($data['date_start']) . "', date_end = '" . $this->db->escape($data['date_end']) . "', uses_total = '" . (int)$data['uses_total'] . "', uses_customer = '" . (int)$data['uses_customer'] . "', status = '" . (int)$data['status'] . "', date_added = NOW()");
++		/* RegExp Coupon
++		 * 
++		 */
++      	$this->db->query("INSERT INTO " . DB_PREFIX . "coupon SET name = '" . $this->db->escape($data['name']) . "', code_regexp = '" . $this->db->escape($data['code_regexp']) . "', code = '" . $this->db->escape($data['code']) . "', discount = '" . (float)$data['discount'] . "', type = '" . $this->db->escape($data['type']) . "', total = '" . (float)$data['total'] . "', logged = '" . (int)$data['logged'] . "', shipping = '" . (int)$data['shipping'] . "', date_start = '" . $this->db->escape($data['date_start']) . "', date_end = '" . $this->db->escape($data['date_end']) . "', uses_total = '" . (int)$data['uses_total'] . "', uses_customer = '" . (int)$data['uses_customer'] . "', status = '" . (int)$data['status'] . "', date_added = NOW(), codename = '" . $this->db->escape($data['codename']) . "', codesecurity = '" . $this->db->escape($data['codesecurity']) . "', codesecurityname = '" . $this->db->escape($data['codesecurityname']) . "'");
+ 
+       	$coupon_id = $this->db->getLastId();
+ 		
+@@ -13,7 +16,10 @@ class ModelSaleCoupon extends Model {
+ 	}
+ 	
+ 	public function editCoupon($coupon_id, $data) {
+-		$this->db->query("UPDATE " . DB_PREFIX . "coupon SET name = '" . $this->db->escape($data['name']) . "', code = '" . $this->db->escape($data['code']) . "', discount = '" . (float)$data['discount'] . "', type = '" . $this->db->escape($data['type']) . "', total = '" . (float)$data['total'] . "', logged = '" . (int)$data['logged'] . "', shipping = '" . (int)$data['shipping'] . "', date_start = '" . $this->db->escape($data['date_start']) . "', date_end = '" . $this->db->escape($data['date_end']) . "', uses_total = '" . (int)$data['uses_total'] . "', uses_customer = '" . (int)$data['uses_customer'] . "', status = '" . (int)$data['status'] . "' WHERE coupon_id = '" . (int)$coupon_id . "'");
++		/* RegExp Coupon
++		 * 
++		 */
++		$this->db->query("UPDATE " . DB_PREFIX . "coupon SET name = '" . $this->db->escape($data['name']) . "', code_regexp = '" . $this->db->escape($data['code_regexp']) . "', code = '" . $this->db->escape($data['code']) . "', discount = '" . (float)$data['discount'] . "', type = '" . $this->db->escape($data['type']) . "', total = '" . (float)$data['total'] . "', logged = '" . (int)$data['logged'] . "', shipping = '" . (int)$data['shipping'] . "', date_start = '" . $this->db->escape($data['date_start']) . "', date_end = '" . $this->db->escape($data['date_end']) . "', uses_total = '" . (int)$data['uses_total'] . "', uses_customer = '" . (int)$data['uses_customer'] . "', status = '" . (int)$data['status'] . "', codename = '" . $this->db->escape($data['codename']) . "', codesecurity = '" . $this->db->escape($data['codesecurity']) . "', codesecurityname = '" . $this->db->escape($data['codesecurityname']) . "' WHERE coupon_id = '" . (int)$coupon_id . "'");
+ 		
+ 		$this->db->query("DELETE FROM " . DB_PREFIX . "coupon_product WHERE coupon_id = '" . (int)$coupon_id . "'");
+ 		
+@@ -43,7 +49,7 @@ class ModelSaleCoupon extends Model {
+ 	}
+ 		
+ 	public function getCoupons($data = array()) {
+-		$sql = "SELECT coupon_id, name, code, discount, date_start, date_end, status FROM " . DB_PREFIX . "coupon";
++		$sql = "SELECT coupon_id, name, code, code_regexp, discount, date_start, date_end, status FROM " . DB_PREFIX . "coupon";
+ 		
+ 		$sort_data = array(
+ 			'name',
+diff --git a/admin/view/template/sale/coupon_form.tpl b/admin/view/template/sale/coupon_form.tpl
+index 7c00e5e..fda58a6 100644
+--- a/admin/view/template/sale/coupon_form.tpl
++++ b/admin/view/template/sale/coupon_form.tpl
+@@ -37,6 +37,41 @@
+                 <?php } ?></td>
+             </tr>
+             <tr>
++              <td><?php echo $entry_code_name; ?></td>
++              <td><input type="text" name="codename" value="<?php echo $codename; ?>" />
++                <?php if ($error_code_name) { ?>
++                <span class="error"><?php echo $error_code_name; ?></span>
++                <?php } ?></td>
++            </tr>
++            <tr>
++              <td><?php echo $entry_code_security; ?></td>
++              <td><input type="text" name="codesecurity" value="<?php echo $codesecurity; ?>" />
++                <?php if ($error_code_security) { ?>
++                <span class="error"><?php echo $error_code_security; ?></span>
++                <?php } ?></td>
++            </tr>
++            <tr>
++              <td><?php echo $entry_code_security_name; ?></td>
++              <td><input type="text" name="codesecurityname" value="<?php echo $codesecurityname; ?>" />
++                <?php if ($error_code_security_name) { ?>
++                <span class="error"><?php echo $error_code_security_name; ?></span>
++                <?php } ?></td>
++            </tr>
++            <tr>
++              <td><?php echo $entry_code_regexp; ?></td>
++              <td><?php if ($code_regexp) { ?>
++                <input type="radio" name="code_regexp" value="1" checked="checked" />
++                <?php echo $text_yes; ?>
++                <input type="radio" name="code_regexp" value="0" />
++                <?php echo $text_no; ?>
++                <?php } else { ?>
++                <input type="radio" name="code_regexp" value="1" />
++                <?php echo $text_yes; ?>
++                <input type="radio" name="code_regexp" value="0" checked="checked" />
++                <?php echo $text_no; ?>
++                <?php } ?></td>
++            </tr>
++            <tr>
+               <td><?php echo $entry_type; ?></td>
+               <td><select name="type">
+                   <?php if ($type == 'P') { ?>
+diff --git a/catalog/controller/checkout/cart.php b/catalog/controller/checkout/cart.php
+index ee8e949..f90aa5b 100644
+--- a/catalog/controller/checkout/cart.php
++++ b/catalog/controller/checkout/cart.php
+@@ -44,7 +44,8 @@ class ControllerCheckoutCart extends Controller {
+ 		// Coupon    
+ 		if (isset($this->request->post['coupon']) && $this->validateCoupon()) { 
+ 			$this->session->data['coupon'] = $this->request->post['coupon'];
+-				
++			$this->session->data['couponCompany'] = $this->request->post['couponCompany'];
++			$this->session->data['couponsecurity'] = $this->request->post['couponsecurity'];
+ 			$this->session->data['success'] = $this->language->get('text_coupon');
+ 			
+ 			$this->redirect($this->url->link('checkout/cart'));
+@@ -127,6 +128,8 @@ class ControllerCheckoutCart extends Controller {
+       		$this->data['column_total'] = $this->language->get('column_total');
+ 			
+ 			$this->data['entry_coupon'] = $this->language->get('entry_coupon');
++			$this->data['entry_couponComp'] = $this->language->get('entry_couponComp');
++			$this->data['entry_coupon_security'] = $this->language->get('entry_coupon_security');
+ 			$this->data['entry_voucher'] = $this->language->get('entry_voucher');
+ 			$this->data['entry_reward'] = sprintf($this->language->get('entry_reward'), $points_total);
+ 			$this->data['entry_country'] = $this->language->get('entry_country');
+@@ -389,6 +392,23 @@ class ControllerCheckoutCart extends Controller {
+ 				'common/footer',
+ 				'common/header'	
+ 			);
++
++
++			/* RegExp Coupon
++			 * 
++			 * Build the company select.
++			 * 
++			 */
++			$this->load->model('checkout/coupon');
++			$couponCompanies = $this->model_checkout_coupon->getCouponCompanies();
++			$couponCompaniesString = '';
++			if(!$couponCompanies==null){
++				$couponCompaniesString = '<option value="" selected>'.$this->language->get('entry_couponCompSelect').'</option>';				
++				foreach($couponCompanies as $couponCompany){
++					$couponCompaniesString .= '<option codesecurity="'.(($couponCompany['codesecurityname']!='' && $couponCompany['codesecurityname']!=NULL) ? '1' : '0').'" codename="'.$couponCompany['codename'].'" codesecurityname="'.$couponCompany['codesecurityname'].'" value="'.$couponCompany['name'].'">'.$couponCompany['name'].'</option>';
++				}
++			}
++			$this->data['couponCompanies'] = $couponCompaniesString;
+ 						
+ 			$this->response->setOutput($this->render());					
+     	} else {
+@@ -422,9 +442,12 @@ class ControllerCheckoutCart extends Controller {
+   	}
+ 	
+ 	private function validateCoupon() {
++		/* RegExp Coupon
++		 * 
++		 */
+ 		$this->load->model('checkout/coupon');
+ 				
+-		$coupon_info = $this->model_checkout_coupon->getCoupon($this->request->post['coupon']);			
++		$coupon_info = $this->model_checkout_coupon->getCoupon($this->request->post['coupon'],$this->request->post['couponCompany'],$this->request->post['couponsecurity']);			
+ 		
+ 		if (!$coupon_info) {			
+ 			$this->error['warning'] = $this->language->get('error_coupon');
+diff --git a/catalog/language/english/checkout/cart.php b/catalog/language/english/checkout/cart.php
+index 43717be..438d704 100644
+--- a/catalog/language/english/checkout/cart.php
++++ b/catalog/language/english/checkout/cart.php
+@@ -32,6 +32,9 @@ $_['column_total']           = 'Total';
+ 
+ // Entry
+ $_['entry_coupon']           = 'Enter your coupon here:';
++$_['entry_coupon_security']  = 'Enter your security code here:';
++$_['entry_couponComp']       = 'Does it belong to a Coupon Company?:';
++$_['entry_couponCompSelect'] = 'Select a Coupon Company if it applies...';
+ $_['entry_voucher']          = 'Enter your gift voucher code here:';
+ $_['entry_reward']           = 'Points to use (Max %s):';
+ $_['entry_country']          = 'Country:';
+diff --git a/catalog/language/spanish/checkout/cart.php b/catalog/language/spanish/checkout/cart.php
+index c090b97..6c9adc0 100644
+--- a/catalog/language/spanish/checkout/cart.php
++++ b/catalog/language/spanish/checkout/cart.php
+@@ -9,6 +9,19 @@ $_['text_items']      = '%s item(s) - %s';
+ $_['text_success']    = 'Éxito: Has añadido <a href="%s">%s</a> a tu <a href="%s">cesta de la compra</a>!';
+ $_['text_empty']      = 'Tu cesta de la compra está vacía!';
+ $_['text_login']      = 'Atención: Debes <a href="%s">iniciar sesión</a> o <a href="%s">crear una cuenta</a> para ver los precios!';
++$_['text_remove']            = 'Hecho: Has modificado tu cesta de compras.';
++$_['text_coupon']            = 'Hecho: Tu cupón fue aplicado.';
++$_['text_voucher']           = 'Hecho: Tu voucher de descuento fue aplicado.';
++$_['text_shipping']          = 'Hecho: Tu estimación de envío fue aplicada.';
++$_['text_points']            = 'Puntos de recompensa: %s';
++$_['text_next']              = '¿Qué quieres hacer ahora?';
++$_['text_next_choice']       = 'Elegir si tienes un cupón de descuento o puntos de recompensa que quieras usar o quieres estimar tu costo de envío.';
++$_['text_use_coupon']        = 'Usar un código de cupón';
++$_['text_use_voucher']       = 'Usar un voucher de regalo';
++$_['text_use_reward']        = 'Usar puntos de recompensa (Disponibles %s)';
++$_['text_shipping_estimate'] = 'Estimar envío e impuestos';
++$_['text_shipping_detail']   = 'Ingresa tu destino para el estimado.';
++$_['text_shipping_method']   = 'Elige un método de envío para esta orden.';
+ 
+ // Column
+ $_['column_remove']   = 'Quitar';
+@@ -19,8 +32,33 @@ $_['column_quantity'] = 'Cantidad';
+ $_['column_price']    = 'Precio unitario';
+ $_['column_total']    = 'Total';
+ 
++// Entry
++$_['entry_coupon']           = 'Ingresa tu cupón aquí:';
++$_['entry_coupon_security']           = 'Ingresa tu código de seguridad aquí:';
++$_['entry_couponComp']       = '¿Corresponde a alguna cuponera?:';
++$_['entry_couponCompSelect'] = 'Seleccione cuponera si corresponde...';
++$_['entry_voucher']          = 'Ingresa tu voucher aquí:';
++$_['entry_reward']           = 'Puntos a utilizar (Max %s):';
++$_['entry_country']          = 'País:';
++$_['entry_zone']             = 'Región / Estado:';
++$_['entry_postcode']         = 'Código postal:';	
++
+ // Error
+ $_['error_stock']     = 'Los productos marcados con *** no están disponibles en la cantidad deseada o están fuera de stock!';
+ $_['error_minimum']   = 'La cantidad mínima de pedido para %s es %s!';	
+-$_['error_required']  = '%s obligatorio!';	
++$_['error_required']  = '%s obligatorio!';
++$_['error_product']   = 'Aviso: No hay productos en su carrito';	
++$_['error_coupon']    = 'Aviso: El cupón es inválido, está expirado o ha alcanzado el límite de uso.';
++$_['error_voucher']   = 'Aviso: El voucher es inválido o ya fue utilizado.';
++$_['error_reward']    = 'Aviso: Por favor, ingrese la cantidad de puntos a utilizar.';	
++$_['error_points']    = 'Aviso: No tienes %s puntos.';
++$_['error_maximum']   = 'Aviso: El máximo número de puntos que pueden ser aplicados es %s!';
++$_['error_postcode']  = 'Código postal debe tener entre 2 y 10 caracteres.';
++$_['error_country']   = 'Please select a country!';
++$_['error_zone']      = 'Please select a region / state!';
++$_['error_shipping']  = 'Aviso: Shipping method required!';
++$_['error_no_shipping'] = 'Aviso: No Shipping options are available. Please <a href="%s">contact us</a> for assistance!';
++
++
++
+ ?>
+\ No newline at end of file
+diff --git a/catalog/language/spanish/spanish.php b/catalog/language/spanish/spanish.php
+index 8cda270..25f4ea0 100644
+--- a/catalog/language/spanish/spanish.php
++++ b/catalog/language/spanish/spanish.php
+@@ -34,6 +34,8 @@ $_['button_new_address']    = 'Nueva Dirección';
+ $_['button_change_address'] = 'Cambiar Dirección';
+ $_['button_add_product']    = 'Agregar Producto';
+ $_['button_remove']         = 'Remover';
++$_['button_reorder']        = 'Reordenar';
++$_['button_return']         = 'Devolver';
+ $_['button_reviews']        = 'Opiniones';
+ $_['button_write']          = 'Escribir Opinión';
+ $_['button_login']          = 'Inicio de Sesión';
+@@ -60,25 +62,5 @@ $_['error_upload_999']      = 'Cuidado: Código error no disponible!';
+ 
+ // Added by Juan Matias de la Camara Beovide 13/aug/2012
+ $_['text_shopping_cart']    = 'Cesta de compras';
+-   // to checkout/cart.php
+-$_['text_remove']            = 'Hecho: Has modificado tu cesta de compras.';
+-$_['text_coupon']            = 'Hecho: Tu cupón fue aplicado.';
+-$_['text_voucher']           = 'Hecho: Tu voucher de descuento fue aplicado.';
+-$_['text_shipping']          = 'Hecho: Tu estimación de envío fue aplicada.';
+-$_['text_points']            = 'Puntos de recompensa: %s';
+-$_['text_next']              = '¿Qué quieres hacer ahora?';
+-$_['text_next_choice']       = 'Elegir si tienes un cupón de descuento o puntos de recompensa que quieras usar o quieres estimar tu costo de envío.';
+-$_['text_use_coupon']        = 'Usar un código de cupón';
+-$_['text_use_voucher']       = 'Usar un voucher de regalo';
+-$_['text_use_reward']        = 'Usar puntos de recompensa (Disponibles %s)';
+-$_['text_shipping_estimate'] = 'Estimar envío e impuestos';
+-$_['text_shipping_detail']   = 'Ingresa tu destino para el estimado.';
+-$_['text_shipping_method']   = 'Elige un método de envío para esta orden.';
+-// Entry
+-$_['entry_coupon']           = 'Ingresa tu coupon aquí:';
+-$_['entry_voucher']          = 'Ingresa tu voucher aquí:';
+-$_['entry_reward']           = 'Puntos a utilizar (Max %s):';
+-$_['entry_country']          = 'País:';
+-$_['entry_zone']             = 'Región / Estado:';
+-$_['entry_postcode']         = 'Código postal:';
+-?>
++
++?>
+\ No newline at end of file
+diff --git a/catalog/language/spanish/total/coupon.php b/catalog/language/spanish/total/coupon.php
+index bf86abf..e47f503 100644
+--- a/catalog/language/spanish/total/coupon.php
++++ b/catalog/language/spanish/total/coupon.php
+@@ -3,7 +3,7 @@
+ $_['heading_title'] = 'Aplicar código descuento';
+ 
+ // Text
+-$_['text_coupon']   = 'Cupón(%s):';
++$_['text_coupon']   = 'Cupón(%s)';
+ $_['text_success']  = 'Éxito: Tu cupón descuento ha sido aplicado!';
+ 
+ // Entry
+diff --git a/catalog/language/spanish/total/total.php b/catalog/language/spanish/total/total.php
+index ad23581..8d572d8 100644
+--- a/catalog/language/spanish/total/total.php
++++ b/catalog/language/spanish/total/total.php
+@@ -1,3 +1,3 @@
+ <?php
+-$_['text_total'] = 'Total:';
++$_['text_total'] = 'Total';
+ ?>
+\ No newline at end of file
+diff --git a/catalog/model/checkout/coupon.php b/catalog/model/checkout/coupon.php
+index fc583e3..8a64d16 100644
+--- a/catalog/model/checkout/coupon.php
++++ b/catalog/model/checkout/coupon.php
+@@ -1,82 +1,230 @@
+ <?php
+ class ModelCheckoutCoupon extends Model {
+-	public function getCoupon($code) {
+-		$status = true;
++	public function getCouponCompanies() {
++		/* This function gets the coupon's names, it should be the Coupon Company names or Campaign names,
++		 * whatever the client want to be shown in the cart.
++		 */
++		$couponcomp_query = $this->db->query("SELECT DISTINCT name, codename, codesecurityname FROM " . DB_PREFIX . "coupon WHERE code_regexp = 1 AND ((date_start = '0000-00-00' OR date_start < NOW()) AND (date_end = '0000-00-00' OR date_end > NOW())) AND status = '1'");
+ 		
+-		$coupon_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "coupon WHERE code = '" . $this->db->escape($code) . "' AND ((date_start = '0000-00-00' OR date_start < NOW()) AND (date_end = '0000-00-00' OR date_end > NOW())) AND status = '1'");
+-			
+-		if ($coupon_query->num_rows) {
+-			if ($coupon_query->row['total'] >= $this->cart->getSubTotal()) {
+-				$status = false;
+-			}
++		if($couponcomp_query->num_rows){
++			return $couponcomp_query->rows;
++		}else{
++			return null;
++		}
+ 		
+-			$coupon_history_query = $this->db->query("SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "coupon_history` ch WHERE ch.coupon_id = '" . (int)$coupon_query->row['coupon_id'] . "'");
++	}
+ 
+-			if ($coupon_query->row['uses_total'] > 0 && ($coupon_history_query->row['total'] >= $coupon_query->row['uses_total'])) {
+-				$status = false;
+-			}
++	public function getCoupon($code, $couponCompany = NULL, $codesecurity = NULL) {
++		/* RegExp Coupons
++		 * 
++		 * Now this function must differentiate between fixed coupons and regexp ones.
++		 * For example: 
++		 * 
++		 * Fixed coupon is when I set coupon's value to 9999 and then I give the code 9999 to the user.
++		 * 
++		 * Regexp coupon is when I have a campaign from a coupon company and the coupons on this campaign have
++		 * codes like two letters and 9 digits. This is a regexp like this: /\w{2}\d{9}/
++		 * 
++		 */
++		$status = true;
++		if($couponCompany==NULL || $couponCompany==''){
++			/* fixed code
++			 * The function remains as the original.
++			 */
++			$coupon_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "coupon WHERE code = '" . $this->db->escape($code) . "' AND ((date_start = '0000-00-00' OR date_start < NOW()) AND (date_end = '0000-00-00' OR date_end > NOW())) AND status = '1'");
++				
++			if ($coupon_query->num_rows) {
++				if ($coupon_query->row['total'] >= $this->cart->getSubTotal()) {
++					$status = false;
++				}
+ 			
+-			if ($coupon_query->row['logged'] && !$this->customer->getId()) {
++				$coupon_history_query = $this->db->query("SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "coupon_history` ch WHERE ch.coupon_id = '" . (int)$coupon_query->row['coupon_id'] . "'");
++	
++				if ($coupon_query->row['uses_total'] > 0 && ($coupon_history_query->row['total'] >= $coupon_query->row['uses_total'])) {
++					$status = false;
++				}
++				
++				if ($coupon_query->row['logged'] && !$this->customer->getId()) {
++					$status = false;
++				}
++				
++				if ($this->customer->getId()) {
++					$coupon_history_query = $this->db->query("SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "coupon_history` ch WHERE ch.coupon_id = '" . (int)$coupon_query->row['coupon_id'] . "' AND ch.customer_id = '" . (int)$this->customer->getId() . "'");
++					
++					if ($coupon_query->row['uses_customer'] > 0 && ($coupon_history_query->row['total'] >= $coupon_query->row['uses_customer'])) {
++						$status = false;
++					}
++				}
++					
++				$coupon_product_data = array();
++					
++				$coupon_product_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "coupon_product WHERE coupon_id = '" . (int)$coupon_query->row['coupon_id'] . "'");
++	
++				foreach ($coupon_product_query->rows as $result) {
++					$coupon_product_data[] = $result['product_id'];
++				}
++					
++				if ($coupon_product_data) {
++					$coupon_product = false;
++						
++					foreach ($this->cart->getProducts() as $product) {
++						if (in_array($product['product_id'], $coupon_product_data)) {
++							$coupon_product = true;
++								
++							break;
++						}
++					}
++						
++					if (!$coupon_product) {
++						$status = false;
++					}
++				}
++			} else {
+ 				$status = false;
+ 			}
+ 			
+-			if ($this->customer->getId()) {
+-				$coupon_history_query = $this->db->query("SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "coupon_history` ch WHERE ch.coupon_id = '" . (int)$coupon_query->row['coupon_id'] . "' AND ch.customer_id = '" . (int)$this->customer->getId() . "'");
+-				
+-				if ($coupon_query->row['uses_customer'] > 0 && ($coupon_history_query->row['total'] >= $coupon_query->row['uses_customer'])) {
++			if ($status) {
++				return array(
++					'coupon_id'     => $coupon_query->row['coupon_id'],
++					'code'          => $coupon_query->row['code'],
++					'name'          => $coupon_query->row['name'],
++					'type'          => $coupon_query->row['type'],
++					'discount'      => $coupon_query->row['discount'],
++					'shipping'      => $coupon_query->row['shipping'],
++					'total'         => $coupon_query->row['total'],
++					'product'       => $coupon_product_data,
++					'date_start'    => $coupon_query->row['date_start'],
++					'date_end'      => $coupon_query->row['date_end'],
++					'uses_total'    => $coupon_query->row['uses_total'],
++					'uses_customer' => $coupon_query->row['uses_customer'],
++					'status'        => $coupon_query->row['status'],
++					'date_added'    => $coupon_query->row['date_added']
++				);
++			}
++		}else{ //if($couponCompany==null || $couponCompany==''){
++			/* RegExp Coupons
++			 * 
++			 * This function is for RegExp Coupons. I must search for a coupon company name (aka coupon's name in the DB).
++			 * So it is possible to have more than one result (two or more campaigns for the same company).
++			 * Then I must look for the campaign in which my code fits, then work with it.
++			 *
++			 * Only search in records with code_regexp = '1'
++			 *  
++			 * Since the RegExp coupons can be used just once I will look for the coupon code in
++			 * the history table, so if it was used in a non-cancelled order it can't be used again.
++			 * 
++			 */
++			$coupon_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "coupon WHERE name = '" . $this->db->escape($couponCompany) . "' AND ((date_start = '0000-00-00' OR date_start < NOW()) AND (date_end = '0000-00-00' OR date_end > NOW())) AND status = '1' AND code_regexp = '1'");
++
++			if ($coupon_query->num_rows) {
++				// Ok I have records
++				$myrecord = NULL;
++				foreach($coupon_query->rows as $coupon_query_row){
++					if(preg_match($coupon_query_row['code'], $code)){
++						//check security code
++						if($coupon_query_row['codesecurity']!=NULL && $coupon_query_row['codesecurity']!=''){
++							if(preg_match($coupon_query_row['codesecurity'], $codesecurity)){
++								$myrecord = $coupon_query_row;
++							}
++						}else{
++							$myrecord = $coupon_query_row;
++						}
++						break;							
++					}
++				}
++				if($myrecord==NULL){
+ 					$status = false;
+ 				}
+-			}
+ 				
+-			$coupon_product_data = array();
+-				
+-			$coupon_product_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "coupon_product WHERE coupon_id = '" . (int)$coupon_query->row['coupon_id'] . "'");
++				if ($myrecord['total'] >= $this->cart->getSubTotal()) {
++					$status = false;
++				}
++			
++				/* RegExp Coupon
++				 * 
++				 * Search in history for used coupon. Remember the code can be used just once.
++				 * I look for the given code with the following status conditions:
++				 *    The code is known as already-used only if the order is not canceled.
++				 * 
++				 */
++				$coupon_history_query_statemen = "SELECT COUNT(*) AS total FROM `" . DB_PREFIX . "coupon_history` ch ";
++				$coupon_history_query_statemen .= "INNER JOIN oc_order AS o ON (o.order_id = ch.order_id) ";
++				//The coupon ID that matched with its RegExp
++				$coupon_history_query_statemen .= "WHERE ch.coupon_id = '" . $myrecord['coupon_id'] . "' ";
++				//To be used status should not be one of the followings: canceled, cenceled reversal, failed, denied (edit this line if you need)
++				$coupon_history_query_statemen .= "AND o.order_status_id <> 7 AND o.order_status_id <> 8 AND o.order_status_id <> 9 AND o.order_status_id <> 10 ";
++				//The given code
++				$coupon_history_query_statemen .= "AND ch.code = '".$code."' ";
+ 
+-			foreach ($coupon_product_query->rows as $result) {
+-				$coupon_product_data[] = $result['product_id'];
+-			}
++				$coupon_history_query = $this->db->query($coupon_history_query_statemen);
++
++				if ($coupon_history_query->row['total'] > 0) {
++					$status = false;
++				}
++				
++				if ($coupon_query->row['logged'] && !$this->customer->getId()) {
++					$status = false;
++				}
+ 				
+-			if ($coupon_product_data) {
+-				$coupon_product = false;
++				$coupon_product_data = array();
+ 					
+-				foreach ($this->cart->getProducts() as $product) {
+-					if (in_array($product['product_id'], $coupon_product_data)) {
+-						$coupon_product = true;
+-							
+-						break;
+-					}
++				$coupon_product_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "coupon_product WHERE coupon_id = '" . (int)$myrecord['coupon_id'] . "'");
++	
++				foreach ($coupon_product_query->rows as $result) {
++					$coupon_product_data[] = $result['product_id'];
+ 				}
+ 					
+-				if (!$coupon_product) {
+-					$status = false;
++				if ($coupon_product_data) {
++					$coupon_product = false;
++						
++					foreach ($this->cart->getProducts() as $product) {
++						if (in_array($product['product_id'], $coupon_product_data)) {
++							$coupon_product = true;
++								
++							break;
++						}
++					}
++						
++					if (!$coupon_product) {
++						$status = false;
++					}
+ 				}
++			} else {
++				$status = false;
+ 			}
+-		} else {
+-			$status = false;
+-		}
+-		
+-		if ($status) {
+-			return array(
+-				'coupon_id'     => $coupon_query->row['coupon_id'],
+-				'code'          => $coupon_query->row['code'],
+-				'name'          => $coupon_query->row['name'],
+-				'type'          => $coupon_query->row['type'],
+-				'discount'      => $coupon_query->row['discount'],
+-				'shipping'      => $coupon_query->row['shipping'],
+-				'total'         => $coupon_query->row['total'],
+-				'product'       => $coupon_product_data,
+-				'date_start'    => $coupon_query->row['date_start'],
+-				'date_end'      => $coupon_query->row['date_end'],
+-				'uses_total'    => $coupon_query->row['uses_total'],
+-				'uses_customer' => $coupon_query->row['uses_customer'],
+-				'status'        => $coupon_query->row['status'],
+-				'date_added'    => $coupon_query->row['date_added']
+-			);
++			
++			if ($status) {
++				return array(
++					'coupon_id'     => $myrecord['coupon_id'],
++					'code'          => $code,
++					'name'          => $myrecord['name'],
++					'type'          => $myrecord['type'],
++					'discount'      => $myrecord['discount'],
++					'shipping'      => $myrecord['shipping'],
++					'total'         => $myrecord['total'],
++					'product'       => $coupon_product_data,
++					'date_start'    => $myrecord['date_start'],
++					'date_end'      => $myrecord['date_end'],
++					'uses_total'    => $myrecord['uses_total'],
++					'uses_customer' => $myrecord['uses_customer'],
++					'status'        => $myrecord['status'],
++					'date_added'    => $myrecord['date_added']
++				);
++			}
++
+ 		}
+ 	}
+ 	
+-	public function redeem($coupon_id, $order_id, $customer_id, $amount) {
+-		$this->db->query("INSERT INTO `" . DB_PREFIX . "coupon_history` SET coupon_id = '" . (int)$coupon_id . "', order_id = '" . (int)$order_id . "', customer_id = '" . (int)$customer_id . "', amount = '" . (float)$amount . "', date_added = NOW()");
++	public function redeem($coupon_id, $order_id, $customer_id, $amount, $code = NULL, $codesecurity = NULL) {
++		if($code==NULL){
++			$code = "";
++		}else{
++			$code = ", code = '".$code."' ";
++			if($codesecurity!=NULL){
++				$code .= ", codesecurity ='".$codesecurity."' ";
++			}
++		}
++		$this->db->query("INSERT INTO `" . DB_PREFIX . "coupon_history` SET coupon_id = '" . (int)$coupon_id . "', order_id = '" . (int)$order_id . "', customer_id = '" . (int)$customer_id . "', amount = '" . (float)$amount . "', date_added = NOW()".$code);
+ 	}
+ }
+ ?>
+\ No newline at end of file
+diff --git a/catalog/model/total/coupon.php b/catalog/model/total/coupon.php
+index d37b703..0d9d505 100644
+--- a/catalog/model/total/coupon.php
++++ b/catalog/model/total/coupon.php
+@@ -5,8 +5,13 @@ class ModelTotalCoupon extends Model {
+ 			$this->load->language('total/coupon');
+ 			
+ 			$this->load->model('checkout/coupon');
+-			 
+-			$coupon_info = $this->model_checkout_coupon->getCoupon($this->session->data['coupon']);
++
++		/* RegExp Coupons
++		 * 
++		 * Added sending Company code and coupon security code the getCoupon function.
++		 * 
++		 */			 
++			$coupon_info = $this->model_checkout_coupon->getCoupon($this->session->data['coupon'],$this->session->data['couponCompany'],$this->session->data['couponsecurity']);
+ 			
+ 			if ($coupon_info) {
+ 				$discount_total = 0;
+@@ -60,7 +65,7 @@ class ModelTotalCoupon extends Model {
+ 					
+ 					$discount_total += $discount;
+ 				}
+-				
++
+ 				if ($coupon_info['shipping'] && isset($this->session->data['shipping_method'])) {
+ 					if (!empty($this->session->data['shipping_method']['tax_class_id'])) {
+ 						$tax_rates = $this->tax->getRates($this->session->data['shipping_method']['cost'], $this->session->data['shipping_method']['tax_class_id']);
+@@ -75,9 +80,15 @@ class ModelTotalCoupon extends Model {
+ 					$discount_total += $this->session->data['shipping_method']['cost'];				
+ 				}				
+       			
++		/* RegExp Coupon
++		 * 
++		 * Added the company code to the total line, so it will be inserted in the DB as:
++		 *    company_name - coupon_code
++		 * 
++		 */
+ 				$total_data[] = array(
+ 					'code'       => 'coupon',
+-        			'title'      => sprintf($this->language->get('text_coupon'), $this->session->data['coupon']),
++        			'title'      => sprintf($this->language->get('text_coupon'), $this->session->data['couponCompany'].' - '.$this->session->data['coupon'].' - '.$this->session->data['couponsecurity']),
+ 	    			'text'       => $this->currency->format(-$discount_total),
+         			'value'      => -$discount_total,
+ 					'sort_order' => $this->config->get('coupon_sort_order')
+@@ -89,21 +100,30 @@ class ModelTotalCoupon extends Model {
+ 	}
+ 	
+ 	public function confirm($order_info, $order_total) {
++		/* RegExp Coupon
++		 * 
++		 * This function will receive the title as "coupon_company - coupon_code - security_code"
++		 * 
++		 */
+ 		$code = '';
+-		
++
+ 		$start = strpos($order_total['title'], '(') + 1;
+ 		$end = strrpos($order_total['title'], ')');
+ 		
+ 		if ($start && $end) {  
+ 			$code = substr($order_total['title'], $start, $end - $start);
++			$code = preg_split('/\s\-\s/', $code);
++			$couponCompany = $code[0];
++			$codesecurity = $code[2];
++			$code = $code[1]; 
+ 		}	
+ 		
+ 		$this->load->model('checkout/coupon');
+ 		
+-		$coupon_info = $this->model_checkout_coupon->getCoupon($code);
++		$coupon_info = $this->model_checkout_coupon->getCoupon($code,$couponCompany,$codesecurity);
+ 			
+ 		if ($coupon_info) {
+-			$this->model_checkout_coupon->redeem($coupon_info['coupon_id'], $order_info['order_id'], $order_info['customer_id'], $order_total['value']);	
++			$this->model_checkout_coupon->redeem($coupon_info['coupon_id'], $order_info['order_id'], $order_info['customer_id'], $order_total['value'],$code);	
+ 		}						
+ 	}
+ }
+diff --git a/catalog/view/theme/default/template/checkout/cart.tpl b/catalog/view/theme/default/template/checkout/cart.tpl
+index 31cee73..86bf8e9 100644
+--- a/catalog/view/theme/default/template/checkout/cart.tpl
++++ b/catalog/view/theme/default/template/checkout/cart.tpl
+@@ -123,15 +123,51 @@
+     </table>
+   </div>
+   <div class="cart-module">
++    
++    <!-- RegExp Coupon - modified to show the coupon, company and security code -->
+     <div id="coupon" class="content" style="display: <?php echo ($next == 'coupon' ? 'block' : 'none'); ?>;">
+       <form action="<?php echo $action; ?>" method="post" enctype="multipart/form-data">
+-        <?php echo $entry_coupon; ?>&nbsp;
+-        <input type="text" name="coupon" value="<?php echo $coupon; ?>" />
+-        <input type="hidden" name="next" value="coupon" />
+-        &nbsp;
+-        <input type="submit" value="<?php echo $button_coupon; ?>" class="button" />
++        <table><tr><td>
++	        <?php echo $entry_couponComp; ?>
++	        <select id='couponCompany' name='couponCompany'>
++	        	<?php echo $couponCompanies; ?>
++	        </select>
++        </td></tr><tr><td>
++	        <div id="entry_coupon"><?php echo $entry_coupon; ?>&nbsp;</div>
++	        <input type="text" name="coupon" value="<?php echo $coupon; ?>" />
++	        <input type="hidden" name="next" value="coupon" />
++        </td></tr><tr><td>
++        </td></tr><tr><td id="entry_coupon_security" style="display:none;">
++	        <div id="entry_coupon_security"><?php echo $entry_coupon_security; ?>&nbsp;</div>
++	        <input type="text" name="couponsecurity" value="" />
++        </td></tr><tr><td>
++        	<input type="submit" value="<?php echo $button_coupon; ?>" class="button" />
++        </td></tr>
++        </table>
+       </form>
+     </div>
++    <script type="text/javascript">
++    	$('select#couponCompany').change(function(){
++    		$(this).children().each(function(){
++    			if($(this).attr('selected')){
++		    		if($(this).attr('codename')!=''){
++		    			$('div#entry_coupon').html('');
++		    			$('div#entry_coupon').html($(this).attr('codename'));
++		    		}
++		    		if($(this).attr('codesecurityname')!=''){
++		    			$('td#entry_coupon_security').attr('style','display:block;');
++		    			$('div#entry_coupon_security').html('');
++		    			$('div#entry_coupon_security').html($(this).attr('codesecurityname'));
++		    		}else{
++		    			$('td#entry_coupon_security').attr('style','display:none;');
++		    		}
++		    	}
++		    });		    
++    	}
++    	);
++    </script>
++    <!-- RegExp Coupon - modified to show the coupon, company and security code -->
++    
+     <div id="voucher" class="content" style="display: <?php echo ($next == 'voucher' ? 'block' : 'none'); ?>;">
+       <form action="<?php echo $action; ?>" method="post" enctype="multipart/form-data">
+         <?php echo $entry_voucher; ?>&nbsp;
