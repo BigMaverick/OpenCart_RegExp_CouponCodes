@@ -1,7 +1,7 @@
 +=========================================================+
 |     RegExp COUPONS v. 1.0                               | 
 |     http://juanmatiasdelacamara.wordpress.com/          |
-|     juanmatias@gmail.com                                |
+|     email: juanmatias@gmail.com                                |
 +=========================================================+
 
 This is a modification to the OpenCart core files to allow coupons codes that fit in a regular expression rather in a fixed code.
